@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+
+############################################################
+# aws-ec2
+#
+# CLI tool for inspecting EC2 fleets
+#
+# Commands
+#   aws-ec2 list
+#   aws-ec2 audit
+#   aws-ec2 images
+#
+############################################################
+
+
+#################################
+# Colors
+#################################
+
+GREEN="\033[32m"
+RED="\033[31m"
+BLUE="\033[34m"
+YELLOW="\033[33m"
+RESET="\033[0m"
+
+
+#################################
+# Help
+#################################
+
+show_help() {
+
+cat <<EOF
+
+aws-ec2 - EC2 fleet inspection tool
+
+Usage:
+  aws-ec2 <command> [options]
+
+Commands:
+
+  list
+      List EC2 instances across regions
+
+  audit
+      Show instance uptime and AMI details
+
+  images
+      Show AMIs used by instances
+
+  help
+      Show this help message
+
+Examples:
+
+  aws-ec2 list
+  aws-ec2 audit
+  aws-ec2 images
+
+EOF
+
+}
+
+
+#################################
+# Regions helper
+#################################
+
+get_regions() {
+
+aws ec2 describe-regions \
+--query "Regions[].RegionName" \
+--output text
+
+}
+
+
+#################################
+# LIST INSTANCES
+#################################
+
+cmd_list() {
+
+printf "${BLUE}%-15s %-20s %-20s %-10s %-10s${RESET}\n" \
+"Region" "InstanceId" "Name" "Type" "State"
+
+for r in $(get_regions); do
+
+aws ec2 describe-instances --region "$r" \
+--query "Reservations[].Instances[].[InstanceId,Tags[?Key=='Name']|[0].Value,InstanceType,State.Name]" \
+--output text |
+
+while read id name type state; do
+
+if [ "$state" = "running" ]; then
+color=$GREEN
+else
+color=$RED
+fi
+
+printf "${YELLOW}%-15s${RESET} %-20s %-20s %-10s ${color}%-10s${RESET}\n" \
+"$r" "$id" "$name" "$type" "$state"
+
+done
+
+done
+
+}
+
+
+#################################
+# AUDIT INSTANCES
+#################################
+
+cmd_audit() {
+
+printf "${BLUE}%-15s %-20s %-20s %-10s %-10s %-10s${RESET}\n" \
+"Region" "InstanceId" "Name" "Type" "State" "Uptime"
+
+for r in $(get_regions); do
+
+aws ec2 describe-instances --region "$r" \
+--query "Reservations[].Instances[].[InstanceId,Tags[?Key=='Name']|[0].Value,InstanceType,State.Name,LaunchTime]" \
+--output text |
+
+while read id name type state launch; do
+
+launch_epoch=$(date -d "$launch" +%s)
+now_epoch=$(date +%s)
+
+uptime_days=$(( (now_epoch - launch_epoch) / 86400 ))
+
+printf "${YELLOW}%-15s${RESET} %-20s %-20s %-10s %-10s %-10sd\n" \
+"$r" "$id" "$name" "$type" "$state" "$uptime_days"
+
+done
+
+done
+
+}
+
+
+#################################
+# LIST AMIS USED
+#################################
+
+cmd_images() {
+
+printf "${BLUE}%-15s %-20s %-45s${RESET}\n" \
+"Region" "AMI ID" "AMI Name"
+
+for r in $(get_regions); do
+
+aws ec2 describe-instances --region "$r" \
+--query "Reservations[].Instances[].ImageId" \
+--output text |
+
+for ami in $(cat); do
+
+name=$(aws ec2 describe-images \
+--region "$r" \
+--image-ids "$ami" \
+--query "Images[0].Name" \
+--output text)
+
+printf "${YELLOW}%-15s${RESET} %-20s %-45s\n" \
+"$r" "$ami" "$name"
+
+done
+
+done
+
+}
+
+
+#################################
+# Command dispatcher
+#################################
+
+case "$1" in
+
+list)
+cmd_list
+;;
+
+audit)
+cmd_audit
+;;
+
+images)
+cmd_images
+;;
+
+help|"")
+show_help
+;;
+
+*)
+echo "Unknown command: $1"
+show_help
+exit 1
+;;
+
+esac

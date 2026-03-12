@@ -1,0 +1,26 @@
+# Terraform local artifacts
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Terraform variable files (often hold secrets)
+*.tfvars
+*.tfvars.json
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local AWS files (never commit credentials)
+.aws/
+aws/
+
+# VS Code local settings
+.vscode/
+
+# macOS and Linux local junk
+.DS_Store
+*.swp

@@ -1,0 +1,10 @@
+.git
+.gitignore
+.aws
+.env
+.env.*
+.terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
