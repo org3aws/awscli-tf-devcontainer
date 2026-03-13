@@ -33,6 +33,61 @@ This repository is set up so secrets stay local:
    - `aws sts get-caller-identity`
    - `terraform version`
 
+### AWS credentials and profile (`.aws` + `AWS_PROFILE`)
+The container bind-mounts your host `~/.aws` into `/root/.aws`, so configure credentials on the host first.
+
+If you do not already have local AWS config files, use the redacted samples:
+
+```bash
+mkdir -p ~/.aws
+cp examples/aws/credentials.example ~/.aws/credentials
+cp examples/aws/config.example ~/.aws/config
+chmod 600 ~/.aws/credentials ~/.aws/config
+```
+
+Set the profile you want AWS CLI and Terraform to use:
+
+```bash
+export AWS_PROFILE=default
+export AWS_REGION=us-east-1
+export AWS_DEFAULT_REGION=us-east-1
+```
+
+Inside the dev container, you can confirm or override the profile for the current shell:
+
+```bash
+echo "$AWS_PROFILE"
+export AWS_PROFILE=default
+aws sts get-caller-identity
+```
+
+To persist in your shell startup file:
+
+```bash
+echo 'export AWS_PROFILE=default' >> ~/.bashrc
+```
+
+### Running directly with Docker (no devcontainer)
+If you run the image directly, let it use the image default user and mount your host `~/.aws` to `/root/.aws` (region comes from `~/.aws/config`).
+
+```bash
+docker run --rm -it \
+   -v "$HOME/.aws:/root/.aws:ro" \
+   -e AWS_PROFILE=default \
+   ghcr.io/<owner>/<repo>:latest \
+   aws sts get-caller-identity
+```
+
+If you need an interactive shell:
+
+```bash
+docker run --rm -it \
+   -v "$HOME/.aws:/root/.aws:ro" \
+   -e AWS_PROFILE=default \
+   ghcr.io/<owner>/<repo>:latest \
+   bash
+```
+
 ## aws-ec2 helper CLI
 This dev container includes `aws-ec2`, a small EC2 fleet inspection helper installed at `/usr/local/bin/aws-ec2`.
 
