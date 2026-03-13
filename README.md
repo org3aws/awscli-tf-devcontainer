@@ -34,7 +34,7 @@ This repository is set up so secrets stay local:
    - `terraform version`
 
 ### AWS credentials and profile (`.aws` + `AWS_PROFILE`)
-The container bind-mounts your host `~/.aws` into `/root/.aws`, so configure credentials on the host first.
+The container bind-mounts your host `~/.aws` into the container user's home (`$HOME/.aws`), so configure credentials on the host first.
 
 If you do not already have local AWS config files, use the redacted samples:
 
@@ -68,11 +68,15 @@ echo 'export AWS_PROFILE=default' >> ~/.bashrc
 ```
 
 ### Running directly with Docker (no devcontainer)
-If you run the image directly, let it use the image default user and mount your host `~/.aws` to `/root/.aws` (region comes from `~/.aws/config`).
+If you run the image directly, mount your host `~/.aws` to the container user's home directory (region comes from `~/.aws/config`).
+
+```bash
+CONTAINER_HOME=$(docker run --rm ghcr.io/org3aws/awscli-tf-devcontainer:latest sh -lc 'printf %s "$HOME"')
+```
 
 ```bash
 docker run --rm -it \
-   -v "$HOME/.aws:/root/.aws:ro" \
+   -v "$HOME/.aws:${CONTAINER_HOME}/.aws:ro" \
    -e AWS_PROFILE=default \
    ghcr.io/org3aws/awscli-tf-devcontainer:latest \
    aws sts get-caller-identity
@@ -82,7 +86,7 @@ If you need an interactive shell:
 
 ```bash
 docker run --rm -it \
-   -v "$HOME/.aws:/root/.aws:ro" \
+   -v "$HOME/.aws:${CONTAINER_HOME}/.aws:ro" \
    -e AWS_PROFILE=default \
    ghcr.io/org3aws/awscli-tf-devcontainer:latest \
    bash
@@ -149,9 +153,8 @@ Example `.devcontainer/devcontainer.json` in another repo:
 {
    "name": "my-project-dev",
    "image": "ghcr.io/org3aws/awscli-tf-devcontainer:latest",
-   "remoteUser": "root",
    "mounts": [
-      "source=${localEnv:HOME}/.aws,target=/root/.aws,type=bind,consistency=cached"
+      "source=${localEnv:HOME}/.aws,target=${containerEnv:HOME}/.aws,type=bind,consistency=cached"
    ],
    "remoteEnv": {
       "AWS_PROFILE": "default"
