@@ -74,7 +74,7 @@ If you run the image directly, let it use the image default user and mount your 
 docker run --rm -it \
    -v "$HOME/.aws:/root/.aws:ro" \
    -e AWS_PROFILE=default \
-   ghcr.io/<owner>/<repo>:latest \
+   ghcr.io/org3aws/awscli-tf-devcontainer:latest \
    aws sts get-caller-identity
 ```
 
@@ -84,7 +84,7 @@ If you need an interactive shell:
 docker run --rm -it \
    -v "$HOME/.aws:/root/.aws:ro" \
    -e AWS_PROFILE=default \
-   ghcr.io/<owner>/<repo>:latest \
+   ghcr.io/org3aws/awscli-tf-devcontainer:latest \
    bash
 ```
 
@@ -126,6 +126,41 @@ Before push, verify no sensitive data is tracked:
 
 If needed, rotate credentials immediately if any were previously committed.
 
+### Use this repository as a shared remote
+Yes, this repository can be used as a normal Git remote for your team.
+
+Typical team usage:
+
+```bash
+git clone https://github.com/org3aws/awscli-tf-devcontainer.git
+cd <repo>
+```
+
+Then open in VS Code and run `Dev Containers: Reopen in Container`.
+
+If you want this to be a starter project, you can also mark it as a GitHub template repository so others can create their own copy.
+
+### Use published image as base for other devcontainers
+After this repo publishes to GHCR, other repositories can consume the image directly instead of rebuilding tools each time.
+
+Example `.devcontainer/devcontainer.json` in another repo:
+
+```json
+{
+   "name": "my-project-dev",
+   "image": "ghcr.io/org3aws/awscli-tf-devcontainer:latest",
+   "remoteUser": "root",
+   "mounts": [
+      "source=${localEnv:HOME}/.aws,target=/root/.aws,type=bind,consistency=cached"
+   ],
+   "remoteEnv": {
+      "AWS_PROFILE": "default"
+   }
+}
+```
+
+If you want deterministic builds in downstream repos, pin a version tag (for example `ghcr.io/org3aws/awscli-tf-devcontainer:v1.2.3`) instead of `latest`.
+
 ## CI/CD image publishing
 This repository includes a GitHub Actions workflow that builds the dev container image from `.devcontainer/Dockerfile` and publishes it to GitHub Container Registry (`ghcr.io`).
 
@@ -136,7 +171,7 @@ Behavior:
 - `workflow_dispatch` lets you trigger a manual publish.
 
 Published image name:
-- `ghcr.io/<owner>/<repo>`
+- `ghcr.io/org3aws/awscli-tf-devcontainer`
 
 Repository requirements:
 - GitHub Actions must be enabled.
@@ -144,4 +179,4 @@ Repository requirements:
 - If your default branch is not `main`, update the workflow trigger accordingly.
 
 After the first publish, you can pull the image with:
-- `docker pull ghcr.io/<owner>/<repo>:latest`
+- `docker pull ghcr.io/org3aws/awscli-tf-devcontainer:latest`
