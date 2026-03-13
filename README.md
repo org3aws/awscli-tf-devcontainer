@@ -70,3 +70,23 @@ Before push, verify no sensitive data is tracked:
 - `rg -n "(AKIA[0-9A-Z]{16}|aws_secret_access_key|aws_session_token)" .`
 
 If needed, rotate credentials immediately if any were previously committed.
+
+## CI/CD image publishing
+This repository includes a GitHub Actions workflow that builds the dev container image from `.devcontainer/Dockerfile` and publishes it to GitHub Container Registry (`ghcr.io`).
+
+Behavior:
+- Pull requests build the image only, which catches Dockerfile regressions before merge.
+- Pushes to `main` publish the image tagged as `latest` and with the commit SHA.
+- Version tags like `v1.2.3` publish matching image tags.
+- `workflow_dispatch` lets you trigger a manual publish.
+
+Published image name:
+- `ghcr.io/<owner>/<repo>`
+
+Repository requirements:
+- GitHub Actions must be enabled.
+- The workflow uses the built-in `GITHUB_TOKEN` with `packages: write` permission.
+- If your default branch is not `main`, update the workflow trigger accordingly.
+
+After the first publish, you can pull the image with:
+- `docker pull ghcr.io/<owner>/<repo>:latest`
