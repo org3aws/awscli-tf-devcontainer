@@ -21,6 +21,7 @@ GREEN="\033[32m"
 RED="\033[31m"
 BLUE="\033[34m"
 YELLOW="\033[33m"
+ORANGE="\033[38;5;208m"
 RESET="\033[0m"
 
 
@@ -81,7 +82,7 @@ aws ec2 describe-regions \
 
 cmd_list() {
 
-printf "${BLUE}%-15s %-20s %-20s %-10s %-10s${RESET}\n" \
+printf "${ORANGE}%-15s %-20s %-20s %-10s %-10s${RESET}\n" \
 "Region" "InstanceId" "Name" "Type" "State"
 
 for r in $(get_regions); do
@@ -114,24 +115,34 @@ done
 
 cmd_audit() {
 
-printf "${BLUE}%-15s %-20s %-20s %-10s %-10s %-10s${RESET}\n" \
-"Region" "InstanceId" "Name" "Type" "State" "Uptime"
+printf "${ORANGE}%-14s %-19s %-14s %-8s %-8s %-6s %-19s %-24s${RESET}\n" \
+"Region" "InstanceId" "Name" "Type" "State" "Uptime" "AMI ID" "AMI Name"
 
 for r in $(get_regions); do
 
+declare -A ami_name_cache
+
 aws ec2 describe-instances --region "$r" \
---query "Reservations[].Instances[].[InstanceId,Tags[?Key=='Name']|[0].Value,InstanceType,State.Name,LaunchTime]" \
+--query "Reservations[].Instances[].[InstanceId,Tags[?Key=='Name']|[0].Value,InstanceType,State.Name,ImageId,LaunchTime]" \
 --output text |
 
-while read id name type state launch; do
+while read id name type state image_id launch; do
+
+if [ -z "${ami_name_cache[$image_id]+x}" ]; then
+ami_name_cache[$image_id]=$(aws ec2 describe-images \
+--region "$r" \
+--image-ids "$image_id" \
+--query "Images[0].Name" \
+--output text)
+fi
 
 launch_epoch=$(date -d "$launch" +%s)
 now_epoch=$(date +%s)
 
 uptime_days=$(( (now_epoch - launch_epoch) / 86400 ))
 
-printf "${YELLOW}%-15s${RESET} %-20s %-20s %-10s %-10s %-10sd\n" \
-"$r" "$id" "$name" "$type" "$state" "$uptime_days"
+printf "${YELLOW}%-14.14s${RESET} %-19.19s %-14.14s %-8.8s %-8.8s %-5sd %-19.19s %-24.24s\n" \
+"$r" "$id" "$name" "$type" "$state" "$uptime_days" "$image_id" "${ami_name_cache[$image_id]}"
 
 done
 
@@ -146,7 +157,7 @@ done
 
 cmd_images() {
 
-printf "${BLUE}%-15s %-20s %-45s${RESET}\n" \
+printf "${ORANGE}%-15s %-20s %-45s${RESET}\n" \
 "Region" "AMI ID" "AMI Name"
 
 for r in $(get_regions); do
