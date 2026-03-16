@@ -76,7 +76,7 @@ CONTAINER_HOME=$(docker run --rm ghcr.io/org3aws/awscli-tf-devcontainer:latest s
 
 ```bash
 docker run --rm -it \
-   -v "$HOME/.aws:${CONTAINER_HOME}/.aws:ro" \
+   -v "$HOME/.aws:${CONTAINER_HOME}/.aws" \
    -e AWS_PROFILE=default \
    ghcr.io/org3aws/awscli-tf-devcontainer:latest \
    aws sts get-caller-identity
@@ -111,7 +111,7 @@ Commands:
    - Shows: `Region`, `InstanceId`, `Name`, `Type`, `State`
 - `aws-ec2 audit`
    - Audits instances across all enabled regions
-   - Shows: `Region`, `InstanceId`, `Name`, `Type`, `State`, `Uptime` (days since launch)
+   - Shows: `Region`, `InstanceId`, `Name`, `Type`, `State`, `Uptime`, `AMI ID`, `AMI Name` (days since launch)
 - `aws-ec2 images`
    - Lists AMIs currently used by discovered instances
    - Shows: `Region`, `AMI ID`, `AMI Name`
