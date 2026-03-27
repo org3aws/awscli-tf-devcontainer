@@ -9,6 +9,7 @@
 #   aws-ec2 list
 #   aws-ec2 audit
 #   aws-ec2 images
+#   aws-ec2 ip [-r]
 #
 ############################################################
 
@@ -49,6 +50,10 @@ Commands:
   images
       Show AMIs used by instances
 
+    ip [-r]
+      Show instance IPs across regions
+      -r : only running instances
+
   help
       Show this help message
 
@@ -57,6 +62,8 @@ Examples:
   aws-ec2 list
   aws-ec2 audit
   aws-ec2 images
+  aws-ec2 ip
+  aws-ec2 ip -r
 
 EOF
 
@@ -185,6 +192,72 @@ done
 
 
 #################################
+# LIST INSTANCE IPS
+#################################
+
+cmd_ip() {
+
+running_only=false
+
+while getopts ":r" opt; do
+case "$opt" in
+r)
+running_only=true
+;;
+*)
+echo "Usage: aws-ec2 ip [-r]"
+return 1
+;;
+esac
+done
+
+shift $((OPTIND - 1))
+
+if [ "$#" -gt 0 ]; then
+echo "Usage: aws-ec2 ip [-r]"
+return 1
+fi
+
+printf "${ORANGE}%-15s %-20s %-20s %-16s %-16s %-10s${RESET}\n" \
+"Region" "InstanceId" "Name" "PrivateIP" "PublicIP" "State"
+
+for r in $(get_regions); do
+
+aws ec2 describe-instances --region "$r" \
+--query "Reservations[].Instances[].[InstanceId,Tags[?Key=='Name']|[0].Value,PrivateIpAddress,PublicIpAddress,State.Name]" \
+--output text |
+
+while read id name private_ip public_ip state; do
+
+if [ "$running_only" = true ] && [ "$state" != "running" ]; then
+continue
+fi
+
+if [ "$state" = "running" ]; then
+color=$GREEN
+else
+color=$RED
+fi
+
+if [ "$public_ip" = "None" ] || [ -z "$public_ip" ]; then
+public_ip="-"
+fi
+
+if [ "$private_ip" = "None" ] || [ -z "$private_ip" ]; then
+private_ip="-"
+fi
+
+printf "${YELLOW}%-15s${RESET} %-20s %-20s %-16s %-16s ${color}%-10s${RESET}\n" \
+"$r" "$id" "$name" "$private_ip" "$public_ip" "$state"
+
+done
+
+done
+
+}
+
+
+#################################
 # Command dispatcher
 #################################
 
@@ -200,6 +273,11 @@ cmd_audit
 
 images)
 cmd_images
+;;
+
+ip)
+shift
+cmd_ip "$@"
 ;;
 
 help|"")
