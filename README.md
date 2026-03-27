@@ -104,6 +104,8 @@ Basic usage:
 - `aws-ec2 list`
 - `aws-ec2 audit`
 - `aws-ec2 images`
+- `aws-ec2 ip`
+- `aws-ec2 ip -r`
 
 Commands:
 - `aws-ec2 list`
@@ -115,12 +117,17 @@ Commands:
 - `aws-ec2 images`
    - Lists AMIs currently used by discovered instances
    - Shows: `Region`, `AMI ID`, `AMI Name`
+- `aws-ec2 ip`
+   - Lists instance IP details across all enabled regions
+   - Use `-r` to show only running instances (`aws-ec2 ip -r`)
+   - Shows: `Region`, `InstanceId`, `Name`, `PrivateIP`, `PublicIP`, `State`
 
 Example workflow:
 1. Confirm identity: `aws sts get-caller-identity`
 2. List running and stopped instances: `aws-ec2 list`
 3. Review uptime for aging hosts: `aws-ec2 audit`
 4. Inspect AMIs in use: `aws-ec2 images`
+5. Review instance IPs: `aws-ec2 ip -r`
 
 ## Sharing on GitHub
 Before push, verify no sensitive data is tracked:
