@@ -106,6 +106,7 @@ Basic usage:
 - `aws-ec2 images`
 - `aws-ec2 ip`
 - `aws-ec2 ip -r`
+- `aws-ec2 ip --r eu-north-1`
 
 Commands:
 - `aws-ec2 list` (shorthand: `aws-ec2 l`)
@@ -121,6 +122,7 @@ Commands:
 - `aws-ec2 ip`
    - Lists instance IP details across all enabled regions
    - Use `-r` to show only running instances (`aws-ec2 ip -r`)
+   - Use `-R <region>` (or `--region` / `--r`) to limit to one region (`aws-ec2 ip --r eu-north-1`)
    - Shows: `Region`, `InstanceId`, `Name`, `PrivateIP`, `PublicIP`, `State`
 
 Example workflow:

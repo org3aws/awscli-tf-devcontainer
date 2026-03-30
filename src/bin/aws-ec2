@@ -9,7 +9,7 @@
 #   aws-ec2 list
 #   aws-ec2 audit
 #   aws-ec2 images
-#   aws-ec2 ip [-r]
+#   aws-ec2 ip [-r] [-R <region>]
 #
 ############################################################
 
@@ -51,9 +51,10 @@ Commands:
   images
       Show AMIs used by instances
 
-    ip [-r]
+    ip [-r] [-R <region>]
       Show instance IPs across regions
       -r : only running instances
+      -R : limit to a specific region
 
   help
       Show this help message
@@ -68,6 +69,7 @@ Examples:
   aws-ec2 images
   aws-ec2 ip
   aws-ec2 ip -r
+  aws-ec2 ip --r eu-north-1
 
 EOF
 
@@ -230,30 +232,39 @@ done
 cmd_ip() {
 
 running_only=false
+region_filter=""
 
-while getopts ":r" opt; do
-case "$opt" in
-r)
-running_only=true
-;;
-*)
-echo "Usage: aws-ec2 ip [-r]"
-return 1
-;;
+while [ "$#" -gt 0 ]; do
+case "$1" in
+  -r|--running)
+    running_only=true
+    shift
+    ;;
+  -R|--region|--r)
+    if [ -z "$2" ]; then
+      echo "Usage: aws-ec2 ip [-r] [-R <region>] [--region <region>] [--r <region>]"
+      return 1
+    fi
+    region_filter="$2"
+    shift 2
+    ;;
+  *)
+    echo "Usage: aws-ec2 ip [-r] [-R <region>] [--region <region>] [--r <region>]"
+    return 1
+    ;;
 esac
 done
 
-shift $((OPTIND - 1))
-
-if [ "$#" -gt 0 ]; then
-echo "Usage: aws-ec2 ip [-r]"
-return 1
+if [ -n "$region_filter" ]; then
+regions="$region_filter"
+else
+regions=$(get_regions)
 fi
 
 printf "${ORANGE}%-15s %-20s %-20s %-16s %-16s %-10s${RESET}\n" \
 "Region" "InstanceId" "Name" "PrivateIP" "PublicIP" "State"
 
-for r in $(get_regions); do
+for r in $regions; do
 
 aws ec2 describe-instances --region "$r" \
 --query "Reservations[].Instances[].[InstanceId,Tags[?Key=='Name']|[0].Value,PrivateIpAddress,PublicIpAddress,State.Name]" \
