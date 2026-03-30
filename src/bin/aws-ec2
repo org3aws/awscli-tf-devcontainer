@@ -41,7 +41,7 @@ Usage:
 
 Commands:
 
-  list [-r <region>]
+  list (l) [-r <region>]
       List EC2 instances across regions
       -r : limit to a specific region
 
@@ -61,7 +61,9 @@ Commands:
 Examples:
 
   aws-ec2 list
+  aws-ec2 l
   aws-ec2 list -r eu-north-1
+  aws-ec2 l -r eu-north-1
   aws-ec2 audit
   aws-ec2 images
   aws-ec2 ip
