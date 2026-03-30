@@ -41,8 +41,9 @@ Usage:
 
 Commands:
 
-  list
+  list [-r <region>]
       List EC2 instances across regions
+      -r : limit to a specific region
 
   audit
       Show instance uptime and AMI details
@@ -60,6 +61,7 @@ Commands:
 Examples:
 
   aws-ec2 list
+  aws-ec2 list -r eu-north-1
   aws-ec2 audit
   aws-ec2 images
   aws-ec2 ip
@@ -89,10 +91,38 @@ aws ec2 describe-regions \
 
 cmd_list() {
 
+local region_filter=""
+
+while getopts ":r:" opt; do
+case "$opt" in
+r)
+region_filter="$OPTARG"
+;;
+*)
+echo "Usage: aws-ec2 list [-r <region>]"
+return 1
+;;
+esac
+done
+
+shift $((OPTIND - 1))
+
+if [ "$#" -gt 0 ]; then
+echo "Usage: aws-ec2 list [-r <region>]"
+return 1
+fi
+
+local regions
+if [ -n "$region_filter" ]; then
+regions="$region_filter"
+else
+regions=$(get_regions)
+fi
+
 printf "${ORANGE}%-15s %-20s %-20s %-10s %-10s${RESET}\n" \
 "Region" "InstanceId" "Name" "Type" "State"
 
-for r in $(get_regions); do
+for r in $regions; do
 
 aws ec2 describe-instances --region "$r" \
 --query "Reservations[].Instances[].[InstanceId,Tags[?Key=='Name']|[0].Value,InstanceType,State.Name]" \
@@ -263,8 +293,9 @@ done
 
 case "$1" in
 
-list)
-cmd_list
+list|l)
+shift
+cmd_list "$@"
 ;;
 
 audit)
