@@ -101,15 +101,16 @@ Prerequisites:
 
 Basic usage:
 - `aws-ec2 help`
-- `aws-ec2 list`
+- `aws-ec2 list` (or `aws-ec2 l`)
 - `aws-ec2 audit`
 - `aws-ec2 images`
 - `aws-ec2 ip`
 - `aws-ec2 ip -r`
 
 Commands:
-- `aws-ec2 list`
+- `aws-ec2 list` (shorthand: `aws-ec2 l`)
    - Lists instances across all enabled regions
+   - Use `-r <region>` to limit to a specific region (`aws-ec2 list -r eu-north-1`)
    - Shows: `Region`, `InstanceId`, `Name`, `Type`, `State`
 - `aws-ec2 audit`
    - Audits instances across all enabled regions
@@ -124,7 +125,7 @@ Commands:
 
 Example workflow:
 1. Confirm identity: `aws sts get-caller-identity`
-2. List running and stopped instances: `aws-ec2 list`
+2. List running and stopped instances: `aws-ec2 list` or `aws-ec2 l -r eu-north-1`
 3. Review uptime for aging hosts: `aws-ec2 audit`
 4. Inspect AMIs in use: `aws-ec2 images`
 5. Review instance IPs: `aws-ec2 ip -r`
